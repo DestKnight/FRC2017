@@ -18,17 +18,10 @@ namespace FRC2017
         string autoSelected;
         SendableChooser chooser;
         bool elapsed;
-        WPILib.CameraServer a;
-        WPILib.CameraServer b;
         RobotDrive drive;
         Joystick stick;
         System.Timers.Timer time;
-        bool elapse;
-        
-        private void timerAlert(Object source, System.Timers.ElapsedEventArgs e)
-        {
-            elapsed = true;
-        }
+        VictorSP climber;
         /// <summary>
         /// This function is run when the robot is first started up and should be
         /// used for any initialization code.
@@ -40,11 +33,12 @@ namespace FRC2017
             chooser.AddObject("My Auto", customAuto);
             SmartDashboard.PutData("Chooser", chooser);
             //start cameras?
-            a.StartAutomaticCapture();
-            b.StartAutomaticCapture();
+            CameraServer.Instance.StartAutomaticCapture(0);
+            CameraServer.Instance.StartAutomaticCapture(1);
             //create joystick and robotdrive objects for joystick input and motor control
             stick = new Joystick(0);
             drive = new RobotDrive(0, 1, 2, 3);
+            climber = new VictorSP(4);
         }
 
         // This autonomous (along with the sendable chooser above) shows how to select between
@@ -62,13 +56,13 @@ namespace FRC2017
             Console.WriteLine("Auto selected: " + autoSelected);
             time = new System.Timers.Timer(500);
             time.AutoReset = false;
-            elapse = false;
+            elapsed = false;
             time.Elapsed += TimeAlert;
 
         }
         private void TimeAlert(object source, System.Timers.ElapsedEventArgs e)
         {
-            elapse = true;
+            elapsed = true;
         }
 
         /// <summary>
@@ -83,10 +77,10 @@ namespace FRC2017
                     break;
                 case defaultAuto:
                 default:
-                    if (!elapse)
+                    if (!elapsed)
                     {
                         time.Enabled = true;
-                        drive.ArcadeDrive(.1, 0);
+                        drive.TankDrive(-.6, -.6);
                     }
                     //Put default auto code here
                     break;
@@ -110,8 +104,14 @@ namespace FRC2017
                 //we then pass these two doubles to the TankDrive method and voila, the robot drives.
 
                 double a = Math.Pow(stick.GetRawAxis(1), 3);
-                double b = Math.Pow(-stick.GetRawAxis(5), 3);
-                drive.TankDrive(a, b);
+                double b = Math.Pow(stick.GetRawAxis(5), 3);
+                drive.TankDrive(b, a);
+                //stick.GetRawButton(0) should be the "a" button
+                //GetRawButton(1) should be "b"
+                double speed = 0.0;
+                speed += (stick.GetRawButton(1) ? 1.0 : 0.0);
+                speed += (stick.GetRawButton(2) ? 1.0 : 0.0);
+                climber.SetSpeed(-speed);
                 //create a delay of .1 second
                 Timer.Delay(0.1);
             }
